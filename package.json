@@ -1,0 +1,24 @@
+{
+  "name": "salesman-ai",
+  "version": "1.0.0",
+  "description": "AI Salesman for Shopify",
+  "main": "web/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "shopify app dev",
+    "build": "shopify app build",
+    "deploy": "shopify app deploy"
+  },
+  "keywords": [
+    "shopify",
+    "app",
+    "react"
+  ],
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@elevenlabs/elevenlabs-js": "^2.5.0",
+    "@shopify/shopify-api": "^11.0.0",
+    "express": "^4.19.2"
+  }
+}

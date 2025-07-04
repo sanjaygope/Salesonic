@@ -1,0 +1,58 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+.report/
+# Caching
+.nyc_output
+.grunt
+/webpack-dev-server/
+.cache
+.parcel-cache
+.eslintcache
+
+# Dependencies
+node_modules/
+/jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache for tool use
+.npm/
+
+# Optional eslint cache
+.eslintcache
+
+# dotenv environment variables file
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+*.stackdump
+
+# IDEs and other tools
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+.project
+.classpath
+.c9/
+.history
+.localhistory
