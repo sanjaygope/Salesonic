@@ -1,24 +1,27 @@
 {
   "version": 2,
-  "builds": [
+  "projects": [
     {
-      "src": "web/index.js",
-      "use": "@vercel/node"
+      "name": "salesman-ai-frontend",
+      "root": "frontend",
+      "buildCommand": "npm run build",
+      "outputDirectory": "build"
     },
     {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "build" }
+      "name": "salesman-ai-backend",
+      "root": "web",
+      "buildCommand": "npm install",
+      "outputDirectory": "."
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "web/index.js"
+      "dest": "salesman-ai-backend"
     },
     {
       "src": "/(.*)",
-      "dest": "frontend/$1"
+      "dest": "salesman-ai-frontend"
     }
   ]
 }
