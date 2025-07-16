@@ -6,16 +6,22 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static('../frontend/build'));
+}
+
 const shopify = shopifyApi({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET,
   scopes: ['write_products', 'write_orders', 'write_themes'],
-  hostName: 'localhost',
+  hostName: process.env.SHOPIFY_APP_URL.replace(/https?:\/\//, ""),
 });
 
 const elevenlabs = new ElevenLabsClient({
   apiKey: process.env.ELEVENLABS_API_KEY,
 });
+
+const { searchProducts, viewProduct, addToCart, viewCart, applyDiscount } = require('./agent-tools.js');
 
 app.use('/api/*', shopify.validateAuthenticatedSession());
 
@@ -39,13 +45,15 @@ app.get('/api/auth/callback', async (req, res) => {
 
     res.redirect(`/?shop=${session.shop}`);
 });
-  const { name, description, systemPrompt, initialMessage, voiceId } = req.body;
+
+app.post('/api/create-agent', async (req, res) => {
+  const { name, description, systemPrompt, initialMessage, voiceId, mcp } = req.body;
 
   try {
     const agent = await elevenlabs.agents.create({
       name: name,
       description: description,
-      system_prompt: systemPrompt,
+      system_prompt: `${systemPrompt}\n\n${mcp}`,
       initial_message: initialMessage,
       voice_id: voiceId,
     });
@@ -56,7 +64,7 @@ app.get('/api/auth/callback', async (req, res) => {
   }
 });
 
-app.post('/api/embed-agent', async (req, res) => {
+app.post('/api/embed-agent', shopify.validateAuthenticatedSession(), async (req, res) => {
   const { agentId } = req.body;
   const session = res.locals.shopify.session;
 
@@ -102,15 +110,61 @@ app.post('/api/embed-agent', async (req, res) => {
   }
 });
 
-const { searchProducts, addToCart } = require('./agent-tools.js');
-
-app.post('/api/agent-tool/search-products', async (req, res) => {
+app.post('/api/agent-tool/search-products', shopify.validateAuthenticatedSession(), async (req, res) => {
   const { query } = req.body;
   const session = res.locals.shopify.session;
 
   try {
     const products = await searchProducts(session, query);
     res.status(200).json(products);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/agent-tool/view-product', shopify.validateAuthenticatedSession(), async (req, res) => {
+  const { productId } = req.body;
+  const session = res.locals.shopify.session;
+
+  try {
+    const product = await viewProduct(session, productId);
+    res.status(200).json(product);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/agent-tool/add-to-cart', shopify.validateAuthenticatedSession(), async (req, res) => {
+  const { cartId, variantId, quantity } = req.body;
+  const session = res.locals.shopify.session;
+
+  try {
+    const cart = await addToCart(session, cartId, variantId, quantity);
+    res.status(200).json(cart);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/agent-tool/view-cart', shopify.validateAuthenticatedSession(), async (req, res) => {
+  const { cartId } = req.body;
+  const session = res.locals.shopify.session;
+
+  try {
+    const cart = await viewCart(session, cartId);
+    res.status(200).json(cart);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/agent-tool/apply-discount', shopify.validateAuthenticatedSession(), async (req, res) => {
+  const { cartId, discountCode } = req.body;
+  const session = res.locals.shopify.session;
+
+  try {
+    const cart = await applyDiscount(session, cartId, discountCode);
+    res.status(200).json(cart);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

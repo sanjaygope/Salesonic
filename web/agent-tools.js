@@ -12,6 +12,15 @@ async function searchProducts(session, query) {
             title
             description
             onlineStoreUrl
+            variants(first: 10) {
+              edges {
+                node {
+                  id
+                  title
+                  price
+                }
+              }
+            }
           }
         }
       }
@@ -22,12 +31,35 @@ async function searchProducts(session, query) {
   return response.body.data.products.edges.map(edge => edge.node);
 }
 
-async function addToCart(session, variantId, quantity) {
+async function viewProduct(session, productId) {
   const client = new shopify.api.clients.Graphql({ session });
 
-  // First, we need to create a cart if one doesn't exist.
-  // For simplicity, we'll assume a cart exists. In a real app, you'd need to handle cart creation.
-  const cartId = "gid://shopify/Cart/1234567890"; // This is a placeholder
+  const queryString = `
+    {
+      product(id: "${productId}") {
+        id
+        title
+        description
+        onlineStoreUrl
+        variants(first: 10) {
+          edges {
+            node {
+              id
+              title
+              price
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  const response = await client.query({ data: queryString });
+  return response.body.data.product;
+}
+
+async function addToCart(session, cartId, variantId, quantity) {
+  const client = new shopify.api.clients.Graphql({ session });
 
   const mutation = `
     mutation cartLinesAdd($cartId: ID!, $lines: [CartLineInput!]!) {
@@ -71,4 +103,69 @@ async function addToCart(session, variantId, quantity) {
   return response.body.data.cartLinesAdd;
 }
 
-module.exports = { searchProducts, addToCart };
+async function viewCart(session, cartId) {
+  const client = new shopify.api.clients.Graphql({ session });
+
+  const queryString = `
+    {
+      cart(id: "${cartId}") {
+        id
+        lines(first: 10) {
+          edges {
+            node {
+              id
+              quantity
+              merchandise {
+                ... on ProductVariant {
+                  id
+                  title
+                  price
+                }
+              }
+            }
+          }
+        }
+        cost {
+          totalAmount {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  `;
+
+  const response = await client.query({ data: queryString });
+  return response.body.data.cart;
+}
+
+async function applyDiscount(session, cartId, discountCode) {
+  const client = new shopify.api.clients.Graphql({ session });
+
+  const mutation = `
+    mutation cartDiscountCodesUpdate($cartId: ID!, $discountCodes: [String!]) {
+      cartDiscountCodesUpdate(cartId: $cartId, discountCodes: $discountCodes) {
+        cart {
+          id
+          discountCodes {
+            code
+          }
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  `;
+
+  const variables = {
+    cartId: cartId,
+    discountCodes: [discountCode],
+  };
+
+  const response = await client.query({ data: { query: mutation, variables } });
+  return response.body.data.cartDiscountCodesUpdate;
+}
+
+module.exports = { searchProducts, viewProduct, addToCart, viewCart, applyDiscount };
